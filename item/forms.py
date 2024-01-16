@@ -1,48 +1,33 @@
 from django import forms
-
 from .models import Item
 
 INPUT_CLASSES = 'w-full py-4 px-6 rounded-xl border'
 
+def create_widget(field, widget_type, classes):
+    return forms.fields_for_model(Item, fields=(field,))[field].formfield(widget=widget_type(attrs={'class': classes}))
 
-class NewItemForm(forms.ModelForm):
+class ItemFormMixin:
+    def apply_custom_widgets(self):
+        for field_name in self.Meta.fields:
+            field = self.fields[field_name]
+            widget_type = type(field.widget)
+            field.widget = create_widget(field_name, widget_type, INPUT_CLASSES)
+
+class NewItemForm(ItemFormMixin, forms.ModelForm):
     class Meta:
         model = Item
-        fields = ('category', 'name', 'description', 'price', 'image',)
-        widgets = {
-            'category': forms.Select(attrs={
-                'class': INPUT_CLASSES
-            }),
-            'name': forms.TextInput(attrs={
-                'class': INPUT_CLASSES
-            }),
-            'description': forms.Textarea(attrs={
-                'class': INPUT_CLASSES
-            }),
-            'price': forms.TextInput(attrs={
-                'class': INPUT_CLASSES
-            }),
-            'image': forms.FileInput(attrs={
-                'class': INPUT_CLASSES
-            }),
-        }
+        fields = ('category', 'name', 'description', 'price', 'image')
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.apply_custom_widgets()
 
-class EditItemForm(forms.ModelForm):
+class EditItemForm(ItemFormMixin, forms.ModelForm):
     class Meta:
         model = Item
         fields = ('name', 'description', 'price', 'image', 'is_sold')
-        widgets = {
-            'name': forms.TextInput(attrs={
-                'class': INPUT_CLASSES
-            }),
-            'description': forms.Textarea(attrs={
-                'class': INPUT_CLASSES
-            }),
-            'price': forms.TextInput(attrs={
-                'class': INPUT_CLASSES
-            }),
-            'image': forms.FileInput(attrs={
-                'class': INPUT_CLASSES
-            }),
-        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.apply_custom_widgets()
+
